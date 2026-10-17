@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIRA - Brunei Small Business Bookkeeping System</title>
+    <!-- Tailwind CSS for modern, clean UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Financial Health & P&L visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-emerald-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-emerald-700 p-2 rounded-lg font-bold text-xl shadow"><i class="fa-solid fa-calculator"></i></div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">KIRA</h1>
+                    <p class="text-xs text-emerald-200">Brunei Small Business Bookkeeping System (BND)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="current-date" class="text-sm bg-emerald-800 px-3 py-1 rounded-full text-emerald-100 hidden sm:inline-block"></span>
+                <button onclick="resetData()" class="text-xs bg-emerald-800 hover:bg-red-600 text-emerald-100 hover:text-white px-3 py-1.5 rounded transition" title="Clear all local data">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Reset Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn py-3 px-4 border-b-2 font-medium text-sm flex items-center space-x-2 border-emerald-600 text-emerald-700">
+                <i class="fa-solid fa-chart-pie"></i><span>Dashboard & Health</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn py-3 px-4 border-b-2 font-medium text-sm flex items-center space-x-2 border-transparent text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-receipt"></i><span>Transactions</span>
+            </button>
+            <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn py-3 px-4 border-b-2 font-medium text-sm flex items-center space-x-2 border-transparent text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-file-invoice-dollar"></i><span>P&L & Balance Sheet</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- ================= 1. DASHBOARD TAB ================= -->
+        <div id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Sales (Revenue)</p>
+                        <h3 id="kpi-sales" class="text-2xl font-bold text-gray-800 mt-1">BND 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Purchases (COGS)</p>
+                        <h3 id="kpi-purchases" class="text-2xl font-bold text-gray-800 mt-1">BND 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-lg"><i class="fa-solid fa-cart-shopping text-xl"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Operating Expenses</p>
+                        <h3 id="kpi-expenses" class="text-2xl font-bold text-gray-800 mt-1">BND 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-wallet text-xl"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Net Profit</p>
+                        <h3 id="kpi-netprofit" class="text-2xl font-bold text-emerald-600 mt-1">BND 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-scale-balanced text-xl"></i></div>
+                </div>
+            </div>
+
+            <!-- Financial Health Score Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="space-y-2 text-center md:text-left">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">Brunei SME Diagnostic</span>
+                        <h2 class="text-xl font-bold text-gray-800">Financial Health Score</h2>
+                        <p class="text-sm text-gray-500 max-w-xl">Based on your profit margins, expense ratios, and cash flow stability. Scored out of 100.</p>
+                        <div id="health-advice" class="text-sm font-medium text-emerald-700 bg-emerald-50 p-3 rounded-lg mt-2">
+                            Loading health analysis...
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-gray-50 p-6 rounded-2xl border border-gray-200 min-w-[200px]">
+                        <span id="health-score-number" class="text-5xl font-extrabold text-emerald-600">--</span>
+                        <span class="text-xs text-gray-400 uppercase tracking-wider mt-1">Out of 100 Points</span>
+                        <span id="health-status-badge" class="mt-2 px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700">Analyzing</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Chart Overview -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-bold text-gray-800 mb-4">Cash Flow Breakdown (BND)</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="cashflowChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-bold text-gray-800 mb-4">Expense Distribution</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 2. TRANSACTIONS TAB ================= -->
+        <div id="tab-transactions" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Transaction Form -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-1">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Record New Entry</h2>
+                    <form id="transaction-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Entry Type</label>
+                            <select id="tx-type" onchange="updateCategoryOptions()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                                <option value="Sales">Sales (Revenue)</option>
+                                <option value="Purchase">Purchase (Stock / COGS)</option>
+                                <option value="Expense">Operating Expense</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Date</label>
+                            <input type="date" id="tx-date" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Receipt / Invoice Number</label>
+                            <input type="text" id="tx-receipt" placeholder="e.g. INV-2023-001" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Category</label>
+                            <select id="tx-category" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Amount (BND)</label>
+                            <input type="number" step="0.01" min="0.01" id="tx-amount" placeholder="0.00" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Description / Notes</label>
+                            <input type="text" id="tx-desc" placeholder="Customer name, item details, etc." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
+                            <i class="fa-solid fa-plus mr-1"></i> Save Transaction
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Transactions Table & Filters -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2 flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 pb-2 border-b gap-3">
+                        <h2 class="text-lg font-bold text-gray-800">Transaction History</h2>
+                        <div class="flex items-center space-x-2 w-full sm:w-auto">
+                            <select id="filter-type" onchange="renderTransactions()" class="border border-gray-300 rounded-lg p-2 text-xs bg-white">
+                                <option value="ALL">All Types</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Purchase">Purchase</option>
+                                <option value="Expense">Expense</option>
+                            </select>
+                            <input type="text" id="search-receipt" oninput="renderTransactions()" placeholder="Search receipt..." class="border border-gray-300 rounded-lg p-2 text-xs w-full sm:w-48">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                    <th class="p-3">Date</th>
+                                    <th class="p-3">Type</th>
+                                    <th class="p-3">Receipt #</th>
+                                    <th class="p-3">Category</th>
+                                    <th class="p-3 text-right">Amount (BND)</th>
+                                    <th class="p-3 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body" class="divide-y divide-gray-100">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 3. REPORTS TAB ================= -->
+        <div id="tab-reports" class="tab-content space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">Financial Statements</h2>
+                    <p class="text-xs text-gray-500">Official statement format for Brunei businesses (BND)</p>
+                </div>
+                <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white text-xs px-4 py-2 rounded-lg transition shadow-sm">
+                    <i class="fa-solid fa-print mr-1"></i> Print / Export PDF
+                </button>
+            </div>
+
+            <!-- Side-by-Side Financial Statements -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Profit & Loss Statement -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div class="text-center pb-3 border-b">
+                        <h3 class="font-bold text-gray-800 text-lg">PROFIT AND LOSS STATEMENT</h3>
+                        <p class="text-xs text-gray-500">KIRA SME Accounting • Currency: Brunei Dollar (BND)</p>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <p class="font-semibold text-emerald-700 bg-emerald-50 p-2 rounded">1. Revenue (Sales)</p>
+                            <div class="flex justify-between px-2 py-1 text-gray-600">
+                                <span>Gross Sales Total</span>
+                                <span id="pnl-sales" class="font-medium">BND 0.00</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-blue-700 bg-blue-50 p-2 rounded">2. Cost of Goods Sold (Purchases)</p>
+                            <div class="flex justify-between px-2 py-1 text-gray-600">
+                                <span>Inventory / Purchases</span>
+                                <span id="pnl-purchases" class="font-medium">BND 0.00</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between font-bold border-t pt-2 text-gray-800">
+                            <span>Gross Profit:</span>
+                            <span id="pnl-grossprofit">BND 0.00</span>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-amber-700 bg-amber-50 p-2 rounded">3. Operating Expenses</p>
+                            <div id="pnl-expense-list" class="space-y-1 px-2 py-1 text-xs text-gray-600">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <div class="flex justify-between px-2 py-1 font-medium text-gray-700 border-t mt-1">
+                                <span>Total Operating Expenses</span>
+                                <span id="pnl-total-expenses">BND 0.00</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-base font-bold bg-gray-100 p-3 rounded-lg border">
+                            <span class="text-gray-800">Net Operating Profit:</span>
+                            <span id="pnl-netprofit" class="text-emerald-700">BND 0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simple Balance Sheet -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div class="text-center pb-3 border-b">
+                        <h3 class="font-bold text-gray-800 text-lg">BALANCE SHEET (ESTIMATE)</h3>
+                        <p class="text-xs text-gray-500">KIRA SME Accounting • Brunei Darussalam</p>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <!-- ASSETS -->
+                        <div>
+                            <p class="font-semibold text-gray-700 bg-gray-100 p-2 rounded uppercase tracking-wider text-xs">Assets</p>
+                            <div class="space-y-1 px-2 py-2 text-gray-600">
+                                <div class="flex justify-between">
+                                    <span>Cash & Bank (Net Cash Flow)</span>
+                                    <span id="bs-cash" class="font-medium">BND 0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Estimated Inventory (Purchases)</span>
+                                    <span id="bs-inventory" class="font-medium">BND 0.00</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between font-bold border-t px-2 pt-1 text-gray-800">
+                                <span>Total Assets:</span>
+                                <span id="bs-total-assets">BND 0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- LIABILITIES -->
+                        <div>
+                            <p class="font-semibold text-gray-700 bg-gray-100 p-2 rounded uppercase tracking-wider text-xs">Liabilities</p>
+                            <div class="space-y-1 px-2 py-2 text-gray-600">
+                                <div class="flex justify-between">
+                                    <span>Accounts Payable / Short-term Debt</span>
+                                    <span>BND 0.00</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between font-bold border-t px-2 pt-1 text-gray-800">
+                                <span>Total Liabilities:</span>
+                                <span>BND 0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- EQUITY -->
+                        <div>
+                            <p class="font-semibold text-gray-700 bg-gray-100 p-2 rounded uppercase tracking-wider text-xs">Equity</p>
+                            <div class="space-y-1 px-2 py-2 text-gray-600">
+                                <div class="flex justify-between">
+                                    <span>Retained Earnings (Net Profit)</span>
+                                    <span id="bs-equity-profit" class="font-medium">BND 0.00</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between font-bold border-t px-2 pt-1 text-gray-800">
+                                <span>Total Equity:</span>
+                                <span id="bs-total-equity">BND 0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between text-base font-bold bg-emerald-50 p-3 rounded-lg border border-emerald-100 text-emerald-900">
+                            <span>Total Liabilities & Equity:</span>
+                            <span id="bs-total-liab-equity">BND 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-4 text-center text-xs text-gray-500">
+        <p>KIRA Bookkeeping System • Built for Brunei Darussalam Businesses • All data stored locally in browser.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Categories definition
+        const categories = {
+            Sales: ["Retail Sales", "Service Income", "B2B / Wholesale", "Online / Delivery", "Other Revenue"],
+            Purchase: ["Raw Materials", "Finished Goods Inventory", "Packaging Supplies", "Direct Supplies"],
+            Expense: ["Rent & Utilities", "Employee Salaries", "Transport & Fuel", "Marketing & Ads", "Maintenance & Repairs", "Miscellaneous"]
+        };
+
+        // LocalStorage Data Initialization
+        let transactions = JSON.parse(localStorage.getItem('kira_transactions')) || [
+            { id: 1, type: "Sales", date: "2023-10-01", receipt: "INV-001", category: "Retail Sales", amount: 1250.00, desc: "Cash customer purchase" },
+            { id: 2, type: "Purchase", date: "2023-10-03", receipt: "PO-088", category: "Finished Goods Inventory", amount: 450.00, desc: "Restock items from supplier" },
+            { id: 3, type: "Expense", date: "2023-10-05", receipt: "EXP-102", category: "Rent & Utilities", amount: 300.00, desc: "Monthly shop electricity & water" }
+        ];
+
+        let cashflowChartInstance = null;
+        let expenseChartInstance = null;
+
+        // Set Default Date to Today on Load
+        document.getElementById('tx-date').valueAsDate = new Date();
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        // Initialize App
+        window.onload = function() {
+            updateCategoryOptions();
+            renderTransactions();
+            updateDashboard();
+            updateReports();
+        };
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-600', 'text-emerald-700');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            const activeBtn = document.getElementById('nav-' + tabId);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            activeBtn.classList.add('border-emerald-600', 'text-emerald-700');
+
+            if (tabId === 'dashboard') {
+                renderCharts();
+            }
+        }
+
+        // Update Category Dropdown based on Type
+        function updateCategoryOptions() {
+            const type = document.getElementById('tx-type').value;
+            const catSelect = document.getElementById('tx-category');
+            catSelect.innerHTML = '';
+            categories[type].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                catSelect.appendChild(opt);
+            });
+        }
+
+        // Form Submission Handler
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const newTx = {
+                id: Date.now(),
+                type: document.getElementById('tx-type').value,
+                date: document.getElementById('tx-date').value,
+                receipt: document.getElementById('tx-receipt').value.trim(),
+                category: document.getElementById('tx-category').value,
+                amount: parseFloat(document.getElementById('tx-amount').value),
+                desc: document.getElementById('tx-desc').value.trim()
+            };
+
+            transactions.unshift(newTx);
+            saveAndRefresh();
+            document.getElementById('transaction-form').reset();
+            document.getElementById('tx-date').valueAsDate = new Date();
+            updateCategoryOptions();
+        }
+
+        // Delete Transaction
+        function deleteTransaction(id) {
+            if (confirm('Are you sure you want to delete this transaction?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveAndRefresh();
+            }
+        }
+
+        // Save to LocalStorage and Refresh Views
+        function saveAndRefresh() {
+            localStorage.setItem('kira_transactions', JSON.stringify(transactions));
+            renderTransactions();
+            updateDashboard();
+            updateReports();
+        }
+
+        // Render Transactions Table
+        function renderTransactions() {
+            const tbody = document.getElementById('transactions-table-body');
+            const filterType = document.getElementById('filter-type').value;
+            const searchReceipt = document.getElementById('search-receipt').value.toLowerCase();
+            
+            tbody.innerHTML = '';
+
+            const filtered = transactions.filter(t => {
+                const matchesType = (filterType === 'ALL' || t.type === filterType);
+                const matchesSearch = t.receipt.toLowerCase().includes(searchReceipt) || t.category.toLowerCase().includes(searchReceipt);
+                return matchesType && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">No transactions found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                let badgeColor = 'bg-emerald-100 text-emerald-800';
+                if (t.type === 'Purchase') badgeColor = 'bg-blue-100 text-blue-800';
+                if (t.type === 'Expense') badgeColor = 'bg-amber-100 text-amber-800';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-gray-600">${t.date}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColor}">${t.type}</span></td>
+                    <td class="p-3 font-medium text-gray-800">${t.receipt}</td>
+                    <td class="p-3 text-gray-600">${t.category}</td>
+                    <td class="p-3 text-right font-semibold text-gray-800">BND ${t.amount.toFixed(2)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteTransaction(${t.id})" class="text-gray-400 hover:text-red-600 transition" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Calculate Totals & Update Dashboard
+        function updateDashboard() {
+            let totalSales = 0;
+            let totalPurchases = 0;
+            let totalExpenses = 0;
+
+            transactions.forEach(t => {
+                if (t.type === 'Sales') totalSales += t.amount;
+                else if (t.type === 'Purchase') totalPurchases += t.amount;
+                else if (t.type === 'Expense') totalExpenses += t.amount;
+            });
+
+            const netProfit = totalSales - totalPurchases - totalExpenses;
+
+            document.getElementById('kpi-sales').innerText = `BND ${totalSales.toFixed(2)}`;
+            document.getElementById('kpi-purchases').innerText = `BND ${totalPurchases.toFixed(2)}`;
+            document.getElementById('kpi-expenses').innerText = `BND ${totalExpenses.toFixed(2)}`;
+            
+            const netProfitEl = document.getElementById('kpi-netprofit');
+            netProfitEl.innerText = `BND ${netProfit.toFixed(2)}`;
+            netProfitEl.className = `text-2xl font-bold mt-1 ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`;
+
+            calculateHealthScore(totalSales, totalPurchases, totalExpenses, netProfit);
+        }
+
+        // Financial Health Score Algorithm
+        function calculateHealthScore(sales, purchases, expenses, profit) {
+            let score = 50; // Base score
+            let advice = "";
+            let statusBadge = document.getElementById('health-status-badge');
+
+            if (sales === 0 && purchases === 0 && expenses === 0) {
+                document.getElementById('health-score-number').innerText = "N/A";
+                document.getElementById('health-advice').innerText = "Add transactions to generate your business health score.";
+                statusBadge.innerText = "No Data";
+                statusBadge.className = "mt-2 px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700";
+                return;
+            }
+
+            // Profit margin factor
+            const margin = sales > 0 ? (profit / sales) * 100 : 0;
+            if (margin > 30) score += 25;
+            else if (margin > 15) score += 15;
+            else if (margin > 0) score += 5;
+            else score -= 20;
+
+            // Expense ratio factor
+            const expenseRatio = sales > 0 ? (expenses / sales) * 100 : 100;
+            if (expenseRatio < 40) score += 15;
+            else if (expenseRatio < 70) score += 5;
+            else score -= 15;
+
+            // Activity factor
+            if (transactions.length >= 5) score += 10;
+
+            // Clamp score between 0 and 100
+            score = Math.max(0, Math.min(100, score));
+
+            document.getElementById('health-score-number').innerText = score;
+
+            if (score >= 80) {
+                statusBadge.innerText = "Excellent";
+                statusBadge.className = "mt-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+                advice = "🌟 Excellent financial health! Your profit margins are strong and expenses are well-controlled.";
+            } else if (score >= 60) {
+                statusBadge.innerText = "Good Standing";
+                statusBadge.className = "mt-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800";
+                advice = "👍 Good business performance. Keep monitoring operating expenses to increase cash reserves.";
+            } else if (score >= 40) {
+                statusBadge.innerText = "Needs Attention";
+                statusBadge.className = "mt-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+                advice = "⚠️ Moderate health. Consider reviewing your inventory costs and lowering discretionary business expenses.";
+            } else {
+                statusBadge.innerText = "At Risk";
+                statusBadge.className = "mt-2 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
+                advice = "🚨 High financial strain detected. Your expenses and purchases exceed safe revenue thresholds in BND.";
+            }
+
+            document.getElementById('health-advice').innerText = advice;
+        }
+
+        // Update P&L and Balance Sheet Reports
+        function updateReports() {
+            let totalSales = 0;
+            let totalPurchases = 0;
+            let totalExpenses = 0;
+            let expenseCategories = {};
+
+            transactions.forEach(t => {
+                if (t.type === 'Sales') totalSales += t.amount;
+                else if (t.type === 'Purchase') totalPurchases += t.amount;
+                else if (t.type === 'Expense') {
+                    totalExpenses += t.amount;
+                    expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                }
+            });
+
+            const grossProfit = totalSales - totalPurchases;
+            const netProfit = grossProfit - totalExpenses;
+
+            // P&L Populate
+            document.getElementById('pnl-sales').innerText = `BND ${totalSales.toFixed(2)}`;
+            document.getElementById('pnl-purchases').innerText = `BND ${totalPurchases.toFixed(2)}`;
+            document.getElementById('pnl-grossprofit').innerText = `BND ${grossProfit.toFixed(2)}`;
+            
+            const expListContainer = document.getElementById('pnl-expense-list');
+            expListContainer.innerHTML = '';
+            for (const [cat, amt] of Object.entries(expenseCategories)) {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between';
+                div.innerHTML = `<span>${cat}</span><span>BND ${amt.toFixed(2)}</span>`;
+                expListContainer.appendChild(div);
+            }
+            if (Object.keys(expenseCategories).length === 0) {
+                expListContainer.innerHTML = `<span class="text-gray-400 italic">No operating expenses recorded.</span>`;
+            }
+
+            document.getElementById('pnl-total-expenses').innerText = `BND ${totalExpenses.toFixed(2)}`;
+            const pnlNetEl = document.getElementById('pnl-netprofit');
+            pnlNetEl.innerText = `BND ${netProfit.toFixed(2)}`;
+            pnlNetEl.className = netProfit >= 0 ? 'text-emerald-700 font-bold' : 'text-red-600 font-bold';
+
+            // Balance Sheet Populate
+            const netCashFlow = totalSales - totalPurchases - totalExpenses;
+            document.getElementById('bs-cash').innerText = `BND ${netCashFlow.toFixed(2)}`;
+            document.getElementById('bs-inventory').innerText = `BND ${totalPurchases.toFixed(2)}`;
+            
+            const totalAssets = netCashFlow + totalPurchases;
+            document.getElementById('bs-total-assets').innerText = `BND ${totalAssets.toFixed(2)}`;
+
+            document.getElementById('bs-equity-profit').innerText = `BND ${netProfit.toFixed(2)}`;
+            document.getElementById('bs-total-equity').innerText = `BND ${netProfit.toFixed(2)}`;
+            document.getElementById('bs-total-liab-equity').innerText = `BND ${totalAssets.toFixed(2)}`;
+        }
+
+        // Render Charts
+        function renderCharts() {
+            let totalSales = 0;
+            let totalPurchases = 0;
+            let totalExpenses = 0;
+            let expenseCategories = {};
+
+            transactions.forEach(t => {
+                if (t.type === 'Sales') totalSales += t.amount;
+                else if (t.type === 'Purchase') totalPurchases += t.amount;
+                else if (t.type === 'Expense') {
+                    totalExpenses += t.amount;
+                    expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                }
+            });
+
+            // Cash Flow Chart
+            const ctx1 = document.getElementById('cashflowChart').getContext('2d');
+            if (cashflowChartInstance) cashflowChartInstance.destroy();
+            cashflowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Sales', 'Purchases', 'Expenses'],
+                    datasets: [{
+                        label: 'Amount (BND)',
+                        data: [totalSales, totalPurchases, totalExpenses],
+                        backgroundColor: ['#059669', '#3b82f6', '#f59e0b'],
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // Expense Distribution Chart
+            const ctx2 = document.getElementById('expenseChart').getContext('2d');
+            if (expenseChartInstance) expenseChartInstance.destroy();
+            expenseChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseCategories),
+                    datasets: [{
+                        data: Object.values(expenseCategories),
+                        backgroundColor: ['#10b981', '#6366f1', '#f97316', '#ec4899', '#84cc16', '#14b8a6']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // Reset Data Function
+        function resetData() {
+            if (confirm('⚠️ WARNING: This will delete all your recorded transactions in KIRA. Are you sure?')) {
+                localStorage.removeItem('kira_transactions');
+                transactions = [];
+                saveAndRefresh();
+                alert('All data has been reset.');
+            }
+        }
+    </script>
+</body>
+</html>
