@@ -694,9 +694,7 @@
 </div>
 
 <script>
-  // Standard public Gemini API reverse proxy endpoint
-  const GEMINI_API_KEY = "AQ.Ab8RN6KCYouFKr1Y7TL6YB5ocv8msa-kjDqB9p2fM-6WNRNZ0w"; // Your copied key
-  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const WORKER_URL = "https://patient-brook-e178.zulzri-15.workers.dev";
 
   const toggleBtn = document.getElementById('kira-chat-toggle');
   const closeBtn = document.getElementById('kira-chat-close');
@@ -727,21 +725,16 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     try {
-      // Direct call using the Google AI REST schema
-      const res = await fetch(`https://ai.claudeshare.top/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      const res = await fetch(WORKER_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: text }] }]
-        })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: text })
       });
       
       const data = await res.json();
-      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-        aiMsg.textContent = data.candidates[0].content.parts[0].text;
-      } else {
-        aiMsg.textContent = data.error?.message || "Sorry, I couldn't generate a response.";
-      }
+      aiMsg.textContent = data.reply || "Sorry, I couldn't generate a response.";
     } catch (err) {
       aiMsg.textContent = "Error connecting to AI assistant.";
     }
