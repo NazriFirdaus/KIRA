@@ -703,15 +703,15 @@
   const inputEl = document.getElementById('kira-user-input');
   const messagesEl = document.getElementById('kira-messages');
 
-  toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
-  closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
+  if (toggleBtn) toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
+  if (closeBtn) closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
 
   async function sendMessage() {
     const text = inputEl.value.trim();
     if (!text) return;
 
     const userMsg = document.createElement('div');
-    userMsg.className = 'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] ml-auto';
+    userMsg.className = 'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] ml-auto mt-2';
     userMsg.textContent = text;
     messagesEl.appendChild(userMsg);
 
@@ -719,7 +719,7 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     const aiMsg = document.createElement('div');
-    aiMsg.className = 'bg-gray-100 p-3 rounded-xl max-w-[85%] text-gray-800';
+    aiMsg.className = 'bg-gray-100 p-3 rounded-xl max-w-[85%] text-gray-800 mt-2';
     aiMsg.textContent = 'Thinking...';
     messagesEl.appendChild(aiMsg);
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -727,22 +727,20 @@
     try {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: text })
       });
       
       const data = await res.json();
-      aiMsg.textContent = data.reply || "Sorry, I couldn't generate a response.";
+      aiMsg.textContent = data.reply || "No response received.";
     } catch (err) {
-      aiMsg.textContent = "Error connecting to AI assistant.";
+      aiMsg.textContent = "Error: " + err.message;
     }
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  sendBtn.addEventListener('click', sendMessage);
-  inputEl.addEventListener('keypress', (e) => {
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (inputEl) inputEl.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
   });
 </script>
