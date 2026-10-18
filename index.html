@@ -694,8 +694,8 @@
 </div>
 
 <script>
-  // Your Cloudflare Worker URL
-  const WORKER_URL = "https://patient-brook-e178.zulzri-15.workers.dev";
+  // Your Gemini API Key from Google AI Studio
+  const GEMINI_API_KEY = "AQ.Ab8RN6IORgA_qlKhq45eDtEH0NnykuS2mrXDgNnI_WmJP0ckSg";
 
   const toggleBtn = document.getElementById('kira-chat-toggle');
   const closeBtn = document.getElementById('kira-chat-close');
@@ -726,13 +726,18 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     try {
-      const res = await fetch(WORKER_URL, {
+     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({
+          contents: [{
+            role: "user",
+            parts: [{ text: `You are KIRA AI, an assistant for the KIRA bookkeeping web app prototype. Help users navigate and test bookkeeping features. Keep responses friendly and concise.\n\nUser: ${text}` }]
+          }]
+        })
       });
       const data = await res.json();
-      aiMsg.textContent = data.reply || "Sorry, I couldn't generate a response.";
+      aiMsg.textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
     } catch (err) {
       aiMsg.textContent = "Error connecting to AI assistant.";
     }
@@ -744,5 +749,3 @@
     if (e.key === 'Enter') sendMessage();
   });
 </script>
-</body>
-</html>
